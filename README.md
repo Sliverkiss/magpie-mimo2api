@@ -1,4 +1,4 @@
-# opencode-mimo2api-auth
+# magpie-mimo2api
 
 [![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![author](https://img.shields.io/badge/author-Sliverkiss-8A2BE2)](https://github.com/Sliverkiss)
