@@ -1,0 +1,21 @@
+{
+  "name": "opencode-mimo2api-auth",
+  "version": "0.2.0",
+  "description": "OpenCode provider plugin: Xiaomi MiMo Studio web reverse proxy (chat, thinking, vision, web search, multi-account)",
+  "type": "module",
+  "main": "./index.mjs",
+  "files": ["index.mjs", "src/", "README.md", "LICENSE"],
+  "keywords": ["opencode", "opencode-plugin", "mimo", "xiaomi", "mimo2api"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Sliverkiss/magpie-mimo2api.git"
+  },
+  "scripts": {
+    "test": "bun test"
+  },
+  "magpie": {
+    "name": "MiMo Studio",
+    "icon": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0OCA0OCI+PHJlY3Qgd2lkdGg9IjQ4IiBoZWlnaHQ9IjQ4IiByeD0iMTEiIGZpbGw9IiNGRjY5MEUiLz48cGF0aCBkPSJNMTIgMzRWMTVoNS4ybDYuOCAxMC40TDMwLjggMTVIMzZ2MTloLTVWMjMuNmwtNi42IDkuOGgtLjhMMTcgMjMuNlYzNHoiIGZpbGw9IiNmZmYiLz48L3N2Zz4="
+  }
+}
