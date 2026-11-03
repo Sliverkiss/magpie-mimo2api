@@ -1,5 +1,9 @@
 # opencode-mimo2api-auth
 
+[![license](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
+[![author](https://img.shields.io/badge/author-Sliverkiss-8A2BE2)](https://github.com/Sliverkiss)
+[![magpie](https://img.shields.io/badge/magpie-插件-00ADD8)](https://usemagpie.ai)
+
 [magpie](https://usemagpie.ai) / OpenCode 供应商插件：把小米 MiMo Studio（aistudio.xiaomimimo.com）的网页账号变成一个 OpenAI 兼容的供应商，所有 agent 可用。改写自 [Sliverkiss/0xCost](https://github.com/Sliverkiss/0xCost/tree/mimo2api)（mimo2api 分支）的 Go 网关，按 magpie 插件协议重新实现。
 
 ## 功能
