@@ -1,6 +1,6 @@
 {
   "name": "magpie-mimo2api",
-  "version": "0.2.0",
+  "version": "0.3.1",
   "description": "magpie provider plugin: Xiaomi MiMo Studio web reverse proxy (chat, thinking, vision, web search, multi-account)",
   "type": "module",
   "main": "./index.mjs",

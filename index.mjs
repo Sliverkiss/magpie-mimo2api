@@ -16,6 +16,7 @@
 
 import { MimoClient, AuthExpiredError, mergeDevice, truncateForLog, DEFAULT_MODEL } from "./src/mimo.mjs";
 import { handleChatCompletion, errorStatus, GatewayError } from "./src/gateway.mjs";
+import { searchMimo } from "./src/search.mjs";
 
 const PROVIDER = "mimo";
 const UPSTREAM = "https://aistudio.xiaomimimo.com";
@@ -220,8 +221,23 @@ export const Mimo2ApiPlugin = async ({ client }, options) => {
             name: "MiMo v2.6 Pro",
             limit: { context: CONTEXT_LIMIT, output: OUTPUT_LIMIT },
             reasoning: true,
+            // The Studio surface searches the web itself when asked to, so
+            // magpie hands a search request straight to this model instead of
+            // running its own search first. Without this flag the model is
+            // silently kept off the search path and answers from memory.
+            searches: true,
             tool_call: false,
             free: true,
+            // Image understanding: the plugin takes image_url parts, uploads
+            // them (resource/genUploadInfo), parses them (resource/parse) and
+            // rides the handle on multiMedias — see src/mimo.mjs. Said here,
+            // because a config-hook model that names no modality is not
+            // "text only", it is "the vendor never spoke": magpie falls back
+            // to voting models.dev by bare model id, and the same model under
+            // a text-only vendor silently loses the capability — screenshots
+            // go straight upstream and are refused.
+            attachment: true,
+            modalities: { input: ["text", "image"], output: ["text"] },
             // The upstream exposes thinking as a boolean only — every effort
             // level maps to "thinking on"; none/off turns it off.
             variants: { none: {}, low: {}, medium: {}, high: {} },
@@ -230,8 +246,12 @@ export const Mimo2ApiPlugin = async ({ client }, options) => {
             name: "MiMo v2.6 Flash",
             limit: { context: CONTEXT_LIMIT, output: OUTPUT_LIMIT },
             reasoning: true,
+            searches: true,
             tool_call: false,
             free: true,
+            // Same as Pro: image parts are uploaded and parsed upstream.
+            attachment: true,
+            modalities: { input: ["text", "image"], output: ["text"] },
             variants: { none: {}, low: {}, medium: {}, high: {} },
           },
         },
@@ -444,6 +464,35 @@ export const Mimo2ApiPlugin = async ({ client }, options) => {
         }
       },
     },
+
+    // ---- web search API ----
+    // Adds "MiMo Studio" to magpie's search API list next to Tavily and
+    // Brave. The entry carries no key of its own: `auth` binds it to this
+    // plugin's signed-in accounts, so magpie picks one that is on, renews it
+    // first if it is due, and hands it over through ctx.getAuth(). That is
+    // also why the search shares the account's own in-memory state — a search
+    // and a chat on the same account must not race two renewals.
+    search: {
+      [PROVIDER]: {
+        name: "MiMo Studio 联网搜索 / Web search",
+        auth: PROVIDER,
+        async execute({ query, count }, ctx) {
+          const auth = await ctx?.getAuth?.();
+          const s = acctState(auth, shared);
+          try {
+            // Same freshness gate as the loader: a due renewal runs before the
+            // search's own clock, exactly as it would for a chat request.
+            const session = await ensureFreshSession(ctx?.getAuth, client, auth, shared, s);
+            return await searchMimo({ query, count }, { client: shared, session, signal: ctx?.abort });
+          } catch (e) {
+            // Same leak guard as usage()/models(): an account magpie can no
+            // longer route to must not keep its client and catalog alive.
+            if (e instanceof AuthExpiredError || e?.signIn === "expired") state.delete(scopeKey(auth));
+            throw e; // the search path never swallows — magpie shows the reason
+          }
+        },
+      },
+    },
   };
 
   // ---------------------------------------------------------------------------
@@ -493,8 +542,16 @@ function listFromCatalog(catalog, provider) {
         output: base.limit?.output ?? OUTPUT_LIMIT,
       },
       reasoning: true,
+      searches: true,
       tool_call: false,
       free: true,
+      // Same declaration as the static entries, repeated here because the
+      // catalog carries rows that have no static counterpart — the upstream
+      // adds models under us, and a row that reaches magpie saying nothing of
+      // its modalities is read as "the vendor never spoke", not "text only".
+      // A static entry's own word wins where it has one.
+      attachment: base.attachment ?? true,
+      modalities: base.modalities ?? { input: ["text", "image"], output: ["text"] },
       variants: base.variants ?? { none: {}, low: {}, medium: {}, high: {} },
     };
   }
@@ -518,3 +575,9 @@ function openaiBadRequest(message) {
     headers: { "content-type": "application/json" },
   });
 }
+
+// Test seam only. The host collects plugin functions by scanning the module's
+// exports for functions (`servers()` in the plugin host), so a plain object
+// here is invisible to it — no test-only hook ever reaches magpie.
+export const _internal = { searchMimo, listFromCatalog };
+
